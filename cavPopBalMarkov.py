@@ -17,10 +17,9 @@ def calcRdot(pb,pl, rhoL):
 
 # [kg/m^3/s]
 def calcMassSource(rhoV, R, A, n, Rdot, dt):
-    R3 = np.power(R,3)
-    B = np.matmul(A-np.identity(len(R)), n)
-    a = 4/3*np.pi*rhoV*( np.dot(R3,B)/dt + 3* np.dot(n,Rdot) )
-    return a
+    R3 = np.power(R, 3)
+    B = np.matmul(A - np.identity(len(R)), n)
+    return 4/3 * np.pi * rhoV * (np.dot(R3, B) / dt + 3 * np.dot(n, Rdot))
 
 def calcAlpha(R,N):
     a = 4/3*np.pi*R**3 * N
