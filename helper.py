@@ -1,7 +1,7 @@
 
 def plotHistogram():
     ax.clear()
-    ax.bar(R**3, N, width= binWidths, log=False, edgecolor="black", linewidth=1.5, color = colors, alpha=0.8)
+    ax.bar(R**3, N, width= binWidths, log=False, edgecolor="black", linewidth=1.5, color = "tab:red", alpha=0.8)
     ax.set_xticks(R**3, labels=labels)
     ax.set_xlabel(fr"$(D [\mu m])^{{{3}}}$")
     ax.set_ylim([0,nDroplets*1.1])
@@ -15,6 +15,7 @@ def plotHistogram():
 def printLog(T, R,N):
     print(f"\tT = {1e3*T:.{3}f} ms")
     print(f"alpha = {calcAlpha(R,N):.{3}f}")
+    print(f"mdot = {calcMassSource(rhoV, R, A, N, Rdot, dt)}")
     printArrayWithNDecimals("N", N, 0)
 
 def printArrayWithNDecimals(name, ar, nd):
