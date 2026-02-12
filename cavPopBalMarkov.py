@@ -18,7 +18,7 @@ def calcRdot(pb,pl, rhoL):
 def calcMassSource(rhoV, R, A, n, Rdot, dt):
     R3 = np.power(R, 3)
     B = np.matmul(A - np.identity(len(R)), n)
-    return 4/3 * np.pi * rhoV * (np.dot(R3, B) / dt + 3 * np.dot(n, Rdot))
+    return 4/3 * np.pi * rhoV * np.dot(R3, B) / dt
 
 def calcAlpha(R,N):
     a = 4/3*np.pi*R**3 * N
@@ -115,8 +115,6 @@ def calcTcollapse(R, rhoL, p_bubble, p_liquid):
     q = -rhoL/(p_bubble - p_liquid)
     q = np.maximum(q, 0.0)
     return 0.915*R*np.sqrt(q)
-
-
 
 # ===================== OLD STUFF =============================
 
