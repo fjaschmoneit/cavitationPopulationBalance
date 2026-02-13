@@ -18,7 +18,7 @@ pv      = 2.3e3     # 2.3e3 Pa (vapor pressure water at 20 deg)
 sigma   = 73e-3     # surface tension [N/m]
 
 # model parameters
-nBins   = 6      # without nucleation bin
+nBins   = 2      # without nucleation bin
 rMin    = 10e-6
 rMax    = 5e-3       # [m]
 gamma   = 1.2
@@ -32,7 +32,7 @@ print("R_eq = ", R_eq*1e6, " mu m")
 # r are the intervall boundaries, and R are the respective representative radii
 r       = calcIntervallBoundaries(nBins, gamma, rMin, rMax)     # [m^3]
 R       = calcIntervallCentres(r)
-
+# print(R[-1])
 nDroplets = 1./(4/3*np.pi*R[-1]**3)         # number of droplets per unit volume (conservative)
 
 n         = np.zeros(len(R))
@@ -40,10 +40,10 @@ n[0]        = nDroplets
 
 pb      = np.zeros(len(R))
 pb[1:]      = pv - 2*sigma/R[1:]    # bubble pressure
-pb[0]   = 0.0001*(pb[1] - pl) +pl         # practical min. bubble pressure. Find reasoning for it.
+pb[0]   = 0.0001*(pb[1] - pl) +pl         # practical min. bubble pressure
 Rdot = calcRdot(pb,pl,rhoL)
 
-dt = 10e-4
+dt = 5e-5
 print(f"dt = {1e3*dt} ms")
 
 A = makeTransitionMatrix(r,rhoL,pb,pl,dt)
@@ -62,12 +62,12 @@ T = 0
 # alpha = calcAlpha(R, N, Vcv)
 # print(f"mdot = {calcMassSource(rhoV, R, A2, N, Rdot, dt)}")
 
-printLog(T,R,n)
+# printLog(T,R,n)
 
 
 
 # plotHistogram()
-timesteps = np.arange(10)
+timesteps = np.arange(2000)
 alphas = np.zeros(len(timesteps))
 Mdots = np.zeros(len(timesteps))
 for i in timesteps:
@@ -78,14 +78,18 @@ for i in timesteps:
     alphas[i] = calcAlpha(R, n)
     Mdots[i] = calcMassSource(rhoV, R, A, n, Rdot, dt)
 
+    if(alphas[i] > 0.8):
+        print(f"T_alpha80 = {1e3*T} ms")
+        break
 
     # dNc = aux.coalescence()
-    printLog(T,R,n)
+    # printLog(T,R,n)
     # plotHistogram()
 
-plt.plot(timesteps, alphas, 'r')
-plt.plot(timesteps, Mdots/max(Mdots), 'b')
+plt.plot(timesteps*dt, alphas, 'xr', label = "alpha")
+# plt.plot(timesteps*dt, Mdots/max(Mdots), 'b', label= "dot(m)")
 
+plt.legend()
 plt.show()
 
 # plt.ioff()
