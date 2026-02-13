@@ -1,14 +1,5 @@
 import numpy as np
 
-def calcMinTimeStep(r, Rdot, epsilon):
-    R = calcIntervallCentres(r)
-    q = 1/(1+epsilon)
-
-    dt1 = q*(r[-2]-R[-2])/abs(Rdot[-2])
-    dt2 = q*(R[-1]-r[-2])/abs(Rdot[-1])
-
-    return np.maximum(dt1,dt2)
-
 def calcRdot(pb,pl, rhoL):
     dp = pb - pl
     a = np.sign(dp)*np.sqrt(2/3/rhoL *(np.abs(dp) ))
@@ -16,9 +7,17 @@ def calcRdot(pb,pl, rhoL):
 
 # [kg/m^3/s]
 def calcMassSource(rhoV, R, A, n, Rdot, dt):
+    R2 = np.power(R,2)
     R3 = np.power(R, 3)
     B = np.matmul(A - np.identity(len(R)), n)
-    return 4/3 * np.pi * rhoV * np.dot(R3, B) / dt
+
+    Q = np.multiply(R2,Rdot)
+
+    x = 4/3 * np.pi * rhoV
+    m1 = x * np.dot(R3, B) / dt
+    # m2 = x * 3* np.dot(Q,n)  # inlcude or not include???
+    # print(f"m1 = {m1}, m2 = {m2}")
+    return m1
 
 def calcAlpha(R,N):
     a = 4/3*np.pi*R**3 * N
@@ -118,6 +117,14 @@ def calcTcollapse(R, rhoL, p_bubble, p_liquid):
 
 # ===================== OLD STUFF =============================
 
+# def calcMinTimeStep(r, Rdot, epsilon):
+#     R = calcIntervallCentres(r)
+#     q = 1/(1+epsilon)
+
+#     dt1 = q*(r[-2]-R[-2])/abs(Rdot[-2])
+#     dt2 = q*(R[-1]-r[-2])/abs(Rdot[-1])
+
+#     return np.maximum(dt1,dt2)
 
 # def calcSizeChangeIntervall(r, rhoL, pb, pl, dt, epsilon):
 #     R = calcIntervallCentres(r)

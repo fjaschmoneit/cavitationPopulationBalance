@@ -43,7 +43,7 @@ pb[1:]      = pv - 2*sigma/R[1:]    # bubble pressure
 pb[0]   = 0.0001*(pb[1] - pl) +pl         # practical min. bubble pressure. Find reasoning for it.
 Rdot = calcRdot(pb,pl,rhoL)
 
-dt = 5e-4
+dt = 10e-4
 print(f"dt = {1e3*dt} ms")
 
 A = makeTransitionMatrix(r,rhoL,pb,pl,dt)
@@ -64,17 +64,29 @@ T = 0
 
 printLog(T,R,n)
 
+
+
 # plotHistogram()
 timesteps = np.arange(10)
+alphas = np.zeros(len(timesteps))
+Mdots = np.zeros(len(timesteps))
 for i in timesteps:
 
     T += dt
     n   = np.dot(A,n)
+    
+    alphas[i] = calcAlpha(R, n)
+    Mdots[i] = calcMassSource(rhoV, R, A, n, Rdot, dt)
 
-    # alpha = calcAlpha(R, N, Vcv)
+
     # dNc = aux.coalescence()
     printLog(T,R,n)
     # plotHistogram()
+
+plt.plot(timesteps, alphas, 'r')
+plt.plot(timesteps, Mdots/max(Mdots), 'b')
+
+plt.show()
 
 # plt.ioff()
 # plt.show()
