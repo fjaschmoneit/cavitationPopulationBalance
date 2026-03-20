@@ -1,97 +1,77 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from cavPopBalMarkov import *
-
-# instead of import: all variables are visible without passing
-exec(open('helper.py').read())
+import cavitationModels
+# from cavPopBalMarkov import *
 
 
 # physical parameters
+physicalParameters = {
+    "rhoV"  :   0.023,      # [kg/m^3]
+    "rhoL"  :   1e3,       # [kg/m^3]
+    "pv"    :   2.3e3,     # 2.3e3 Pa (vapor pressure water at 20 deg)
+    "sigma" :   73e-3,     # surface tension [N/m]
+    "pl"    :   2.1e3,        # ambient liquid pressure (set just below pv for great R_eq)
+    "pnc"   :   21e3         # pressure non-condensable gases O2, see https://en.wikipedia.org/wiki/Partial_pressure
+}
 
-# rho vapor = 0.0048g/L at out atmospheric pressure, and room temperature, 
-# see https://en.wikipedia.org/wiki/Water_vapor
-# it is assumed that the vapor is at vapor pressure, which is lower than athmospheric pressure
-# so a good value for rhoV would be somewhat smaller.
-rhoV    = 0.023      # [kg/m^3]
-rhoL    = 1e3       # [kg/m^3]
-pv      = 2.3e3     # 2.3e3 Pa (vapor pressure water at 20 deg)
-sigma   = 73e-3     # surface tension [N/m]
+# popBal model parameters
+popBalParameters = {
+    "nBins"   : 8,      # including nucleation bin
+    "Rnucl"   : 1e-10,
+    "rMin"    : 10e-6,
+    "rMax"    : 5e-3,       # [m]
+    "gamma"   : 1.2,       # interval growth rate
+    "beta"    : 0.001   # inception activity parameter
+}
 
-# model parameters
-nBins   = 2      # without nucleation bin
-rMin    = 10e-6
-rMax    = 5e-3       # [m]
-gamma   = 1.2
+popBal          = cavitationModels.PopBalCav(popBalParameters, physicalParameters)
 
-# operation parameters
-pl      = 1.5e2        # ambient liquid pressure (set just below pv for great R_eq)
+# schnerrSauer    = cavitationModels.PopBalCav()
 
-R_eq    = max(2*sigma/(pv-pl),0)    # [m]        # Laplace equation
-print("R_eq = ", R_eq*1e6, " mu m")
-
-# r are the intervall boundaries, and R are the respective representative radii
-r       = calcIntervallBoundaries(nBins, gamma, rMin, rMax)     # [m^3]
-R       = calcIntervallCentres(r)
-# print(R[-1])
-nDroplets = 1./(4/3*np.pi*R[-1]**3)         # number of droplets per unit volume (conservative)
-
-n         = np.zeros(len(R))
-n[0]        = nDroplets
-
-pb      = np.zeros(len(R))
-pb[1:]      = pv - 2*sigma/R[1:]    # bubble pressure
-pb[0]   = 0.0001*(pb[1] - pl) +pl         # practical min. bubble pressure
-Rdot = calcRdot(pb,pl,rhoL)
-
-dt = 5e-5
-print(f"dt = {1e3*dt} ms")
-
-A = makeTransitionMatrix(r,rhoL,pb,pl,dt)
-np.set_printoptions(precision=3, suppress=False)
-print(A)
-
-# print("eign = ", np.linalg.eig(A))
-
-# plt.ion()
-# ax = plt.gca()
-
-binWidths       = r[1:]**3 - r[:-1]**3
-labels          = [rf"${R:.0f}^{{{3}}}$" for R in 1e6*R]
-
-T = 0
-# alpha = calcAlpha(R, N, Vcv)
-# print(f"mdot = {calcMassSource(rhoV, R, A2, N, Rdot, dt)}")
-
-# printLog(T,R,n)
+q = np.zeros(popBalParameters["nBins"])
+q[0] = 1
+# q.fill(1./popBalParameters["nBins"])
+popBal.setInitialDistribution(q)
 
 
 
-# plotHistogram()
-timesteps = np.arange(2000)
-alphas = np.zeros(len(timesteps))
-Mdots = np.zeros(len(timesteps))
-for i in timesteps:
+# binWidths       = r[1:]**3 - r[:-1]**3
+# labels          = [rf"${R:.0f}^{{{3}}}$" for R in 1e6*R]
 
-    T += dt
-    n   = np.dot(A,n)
-    
-    alphas[i] = calcAlpha(R, n)
-    Mdots[i] = calcMassSource(rhoV, R, A, n, Rdot, dt)
+# T = 0
+dt = popBal.calcTimeStep()
+print(f"dt = {dt:.2}")
 
-    if(alphas[i] > 0.8):
-        print(f"T_alpha80 = {1e3*T} ms")
-        break
+times = np.array([0])
+alphas = np.array([0])
 
+pressureSwitch = False
+
+while times[-1] < 0.06:
+    T = times[-1] + dt
+    times = np.append(times, T)
+
+    popBal.evolve(dt)
+    alphas = np.append(alphas, popBal.getAlpha())
+
+    if T >= 0.04 and pressureSwitch == False:
+        pressureSwitch = True
+        popBal.printTransitionMatrix()
+        popBal.updatePhysicalParameter("pl", 2.5e3)
+        dt = popBal.calcTimeStep()
+        print(f"dt = {dt:.2}")
+
+# print(f"{np.sum(popBal.n)}")
+    # Mdots[i] = calcMassSource(rhoV, R, A, n, Rdot, dt)
+    # calc vel divergence
     # dNc = aux.coalescence()
-    # printLog(T,R,n)
-    # plotHistogram()
 
-plt.plot(timesteps*dt, alphas, 'xr', label = "alpha")
+popBal.printTransitionMatrix()
+
+plt.plot(times, alphas, 'k-', label = "alpha")
 # plt.plot(timesteps*dt, Mdots/max(Mdots), 'b', label= "dot(m)")
 
 plt.legend()
 plt.show()
 
-# plt.ioff()
-# plt.show()
 

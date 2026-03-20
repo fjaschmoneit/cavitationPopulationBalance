@@ -1,119 +1,117 @@
 import numpy as np
 
-def calcRdot(pb,pl, rhoL):
-    dp = pb - pl
-    a = np.sign(dp)*np.sqrt(2/3/rhoL *(np.abs(dp) ))
-    return a
+# def calcRdot(pb,pl, rhoL):
+#     dp = pb - pl
+#     a = np.sign(dp)*np.sqrt(2/3/rhoL *(np.abs(dp) ))
+#     return a
+#
+# # [kg/m^3/s]
+# def calcMassSource(rhoV, R, A, n, Rdot, dt):
+#     R2 = np.power(R,2)
+#     R3 = np.power(R, 3)
+#     B = np.matmul(A - np.identity(len(R)), n)
+#
+#     Q = np.multiply(R2,Rdot)
+#
+#     x = 4/3 * np.pi * rhoV
+#     m1 = x * np.dot(R3, B) / dt
+#     return m1
+#
+# # def calcAlpha(R,N):
+#     a = 4/3*np.pi*R**3 * N
+#     return np.sum(a)
 
-# [kg/m^3/s]
-def calcMassSource(rhoV, R, A, n, Rdot, dt):
-    R2 = np.power(R,2)
-    R3 = np.power(R, 3)
-    B = np.matmul(A - np.identity(len(R)), n)
+# def calcSizeChangeIntervall(r, rhoL, pb, pl, dt):
 
-    Q = np.multiply(R2,Rdot)
+#     drdt = calcRdot(pb,pl,rhoL)
 
-    x = 4/3 * np.pi * rhoV
-    m1 = x * np.dot(R3, B) / dt
-    # m2 = x * 3* np.dot(Q,n)  # inlcude or not include???
-    # print(f"m1 = {m1}, m2 = {m2}")
-    return m1
+#     dr = drdt * dt 
+#     r_a = r[:-1] + dr
+#     r_b = r[1:] + dr
 
-def calcAlpha(R,N):
-    a = 4/3*np.pi*R**3 * N
-    return np.sum(a)
+#     r_a = np.where( r_a > r[-1], r[-1], r_a)
+#     r_b = np.where( r_b > r[-1], r[-1], r_b)
 
-def calcSizeChangeIntervall(r, rhoL, pb, pl, dt):
+#     r_a = np.where( r_a < r[0], 0, r_a )
+#     r_b = np.where( r_b < r[0], 0, r_b )
 
-    drdt = calcRdot(pb,pl,rhoL)
-
-    dr = drdt * dt 
-    r_a = r[:-1] + dr
-    r_b = r[1:] + dr
-
-    r_a = np.where( r_a > r[-1], r[-1], r_a)
-    r_b = np.where( r_b > r[-1], r[-1], r_b)
-
-    r_a = np.where( r_a < r[0], 0, r_a )
-    r_b = np.where( r_b < r[0], 0, r_b )
-
-    return r_a, r_b
+#     return r_a, r_b
     
 
-def makeTransitionMatrix(r, rhoL, pb, pl, dt):
-    A = np.ndarray((len(pb), len(pb)), dtype=float )
-    A.fill(0)
-    r_a, r_b = calcSizeChangeIntervall(r, rhoL, pb, pl, dt)
+# def makeTransitionMatrix(r, rhoL, pb, pl, dt):
+#     A = np.ndarray((len(pb), len(pb)), dtype=float )
+#     A.fill(0)
+#     r_a, r_b = calcSizeChangeIntervall(r, rhoL, pb, pl, dt)
 
-    bins_a = findBins(r, r_a)
-    bins_b = findBins(r, r_b)
-    Q = r_b - r_a 
+#     bins_a = findBins(r, r_a)
+#     bins_b = findBins(r, r_b)
+#     Q = r_b - r_a 
 
-    for i in np.arange(len(pb)):
-        a = bins_a[i]
-        b = bins_b[i]
+#     for i in np.arange(len(pb)):
+#         a = bins_a[i]
+#         b = bins_b[i]
 
-        if(a==b):
-            A[a,i] = 1.
-        else:
-            A[a,i] = (r[a+1] - r_a[i] )/Q[i]
-            A[b,i] = (r_b[i] - r[b])/Q[i]
+#         if(a==b):
+#             A[a,i] = 1.
+#         else:
+#             A[a,i] = (r[a+1] - r_a[i] )/Q[i]
+#             A[b,i] = (r_b[i] - r[b])/Q[i]
 
-            for j in np.arange(a+1,b):
-                A[j,i] = (r[j+1] - r[j])/Q[i]
+#             for j in np.arange(a+1,b):
+#                 A[j,i] = (r[j+1] - r[j])/Q[i]
         
-    return A
+#     return A
 
 
-def findBins(rBins, R):
-    bins = np.zeros(len(R), dtype=int)
-    for i in np.arange(len(R)):
-        bins[i] = findBin(rBins, R[i])
-    return bins
+# def findBins(rBins, R):
+#     bins = np.zeros(len(R), dtype=int)
+#     for i in np.arange(len(R)):
+#         bins[i] = findBin(rBins, R[i])
+#     return bins
 
-def findBin(rBins, R):
-    nBins = len(rBins)-1
-    for i in np.arange(0,nBins):
-        if rBins[i] <= R and R <= rBins[i+1]:
-            return int(i)
-    raise RuntimeError("Error:  Radius larger than greatest bin. rBinMax = ", rBins[-1], ", R = ", R )
+# def findBin(rBins, R):
+#     nBins = len(rBins)-1
+#     for i in np.arange(0,nBins):
+#         if rBins[i] <= R and R <= rBins[i+1]:
+#             return int(i)
+#     raise RuntimeError("Error:  Radius larger than greatest bin. rBinMax = ", rBins[-1], ", R = ", R )
 
-def calcIntervallBoundaries( nBins, gamma, rMin, rMax ):
+# def calcIntervallBoundaries( nBins, gamma, rMin, rMax ):
 
-    A = np.zeros((nBins+1, nBins+1))
-    b = np.zeros(nBins+1)
+#     A = np.zeros((nBins+1, nBins+1))
+#     b = np.zeros(nBins+1)
 
-    A[0][0] = 1
-    A[-1][-1] = 1
-    for i in np.arange(1, nBins):
-        A[i][i-1] = -gamma/(1+gamma)
-        A[i][i] = 1
-        A[i][i+1] = -1/(1+gamma)
+#     A[0][0] = 1
+#     A[-1][-1] = 1
+#     for i in np.arange(1, nBins):
+#         A[i][i-1] = -gamma/(1+gamma)
+#         A[i][i] = 1
+#         A[i][i+1] = -1/(1+gamma)
 
-    vMin = rMin**3
-    vMax = rMax**3
-    b[0] = vMin
-    b[-1] = vMax
+#     vMin = rMin**3
+#     vMax = rMax**3
+#     b[0] = vMin
+#     b[-1] = vMax
 
-    v = np.linalg.solve(A,b)
-    r = np.cbrt(v)
+#     v = np.linalg.solve(A,b)
+#     r = np.cbrt(v)
 
-    r = np.insert(r, 0, 0)      # including the nucleus bin
+#     r = np.insert(r, 0, 0)      # including the nucleus bin
 
-    return r
+#     return r
 
-def calcIntervallCentres(r):
+# def calcIntervallCentres(r):
 
-    v = r**3
-    V = 0.5*(v[1:] + v[:-1])
-    R = np.cbrt(V)
-    R[0] = 0               # nucleus size
-    return R
-
-def calcTcollapse(R, rhoL, p_bubble, p_liquid):
-    q = -rhoL/(p_bubble - p_liquid)
-    q = np.maximum(q, 0.0)
-    return 0.915*R*np.sqrt(q)
+#     v = r**3
+#     V = 0.5*(v[1:] + v[:-1])
+#     R = np.cbrt(V)
+#     R[0] = 0               # nucleus size
+# #     return R
+#
+# def calcTcollapse(R, rhoL, p_bubble, p_liquid):
+#     q = -rhoL/(p_bubble - p_liquid)
+#     q = np.maximum(q, 0.0)
+#     return 0.915*R*np.sqrt(q)
 
 # ===================== OLD STUFF =============================
 
